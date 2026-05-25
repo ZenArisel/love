@@ -33,7 +33,6 @@
     border: 1.5px solid rgba(255,180,210,0.5);
   }
 
-  /* Name Page */
   #namePage { display:flex; flex-direction:column; align-items:center; }
   #namePage .icon { font-size:52px; margin-bottom:12px; animation: heartbeat 1.4s ease-in-out infinite; }
   @keyframes heartbeat {
@@ -50,10 +49,7 @@
     background:rgba(255,240,248,0.7); outline:none;
     transition:border-color 0.2s, box-shadow 0.2s;
   }
-  .name-input-wrap input:focus {
-    border-color:#f05a99;
-    box-shadow:0 0 0 3px rgba(240,90,153,0.15);
-  }
+  .name-input-wrap input:focus { border-color:#f05a99; box-shadow:0 0 0 3px rgba(240,90,153,0.15); }
   .name-input-wrap input::placeholder { color:rgba(190,100,140,0.5); }
   .name-input-wrap .input-icon { position:absolute; right:16px; top:50%; transform:translateY(-50%); font-size:18px; pointer-events:none; }
 
@@ -63,8 +59,7 @@
     color:white; border:none; border-radius:50px;
     font-size:1.05rem; font-family:'Sarabun',sans-serif; font-weight:700;
     cursor:pointer; box-shadow:0 6px 24px rgba(220,60,130,0.35);
-    transition:transform 0.15s, box-shadow 0.15s;
-    width:100%;
+    transition:transform 0.15s, box-shadow 0.15s; width:100%;
   }
   .btn-start:hover { transform:translateY(-2px); box-shadow:0 10px 28px rgba(220,60,130,0.4); }
   .btn-start:active { transform:scale(0.97); }
@@ -80,7 +75,6 @@
     word-break:break-all; user-select:all; cursor:pointer; display:block; margin-top:4px;
   }
 
-  /* Question Page */
   #questionPage { display:none; flex-direction:column; align-items:center; }
   .gif-wrap { margin:0 auto 18px; border-radius:20px; overflow:hidden; width:min(180px,55vw); box-shadow:0 8px 30px rgba(210,60,120,0.2); }
   .gif-wrap img { width:100%; display:block; }
@@ -100,22 +94,33 @@
   .btn-yes:hover { transform:translateY(-3px) scale(1.04); box-shadow:0 10px 30px rgba(220,60,130,0.45); }
   .btn-yes:active { transform:scale(0.97); }
 
+  /* ปุ่มไม่ — ใช้ fixed + transform แทนการขยับ left/top */
   .btn-no {
     padding:13px 32px;
     background:rgba(255,255,255,0.75); color:#c06090;
     border:2px solid rgba(220,100,160,0.35); border-radius:50px;
     font-size:1.05rem; font-family:'Sarabun',sans-serif; font-weight:700;
     cursor:pointer;
-    /* เพิ่ม transition เพื่อให้ขยับลื่น */
-    transition: left 0.15s ease, top 0.15s ease;
+    position: fixed;
+    z-index: 10;
+    /*숨김: ยังไม่แสดงจนกว่าจะ init */
+    visibility: hidden;
+    transition: transform 0.2s cubic-bezier(0.25,0.46,0.45,0.94);
   }
-  .btn-no.floating {
-    position:fixed; z-index:10;
+
+  /* placeholder ใน btn-row เพื่อจองพื้นที่ */
+  .btn-no-placeholder {
+    padding:13px 32px;
+    border-radius:50px;
+    font-size:1.05rem;
+    font-weight:700;
+    visibility: hidden;
+    pointer-events: none;
+    border: 2px solid transparent;
   }
 
   .no-counter { margin-top:14px; font-size:0.82rem; color:#d06090; min-height:18px; opacity:0.75; }
 
-  /* Love Page */
   #lovePage { display:none; flex-direction:column; align-items:center; }
   .love-gif-wrap {
     border-radius:20px; overflow:hidden; width:min(200px,60vw);
@@ -135,8 +140,6 @@
   <div class="petals-container" id="petals"></div>
 
   <div class="card">
-
-    <!-- Page 0: กรอกชื่อ -->
     <div id="namePage">
       <span class="icon">💕</span>
       <h1>ใส่ชื่อทั้งคู่เลย~</h1>
@@ -153,7 +156,6 @@
       <div class="share-hint" id="shareHint"></div>
     </div>
 
-    <!-- Page 1: คำถาม -->
     <div id="questionPage">
       <div class="gif-wrap">
         <img src="https://media.giphy.com/media/MpNy5P7x5vWM0/giphy.gif" alt="nervous cat">
@@ -162,12 +164,11 @@
       <p class="subtitle">คิดให้ดีก่อนนะ~</p>
       <div class="btn-row">
         <button class="btn-yes" onclick="showLove()">รัก ❤️</button>
-        <button class="btn-no" id="noBtn">ไม่ 😒</button>
+        <div class="btn-no-placeholder" id="noPlaceholder">ไม่ 😒</div>
       </div>
       <div class="no-counter" id="noCounter"></div>
     </div>
 
-    <!-- Page 2: รัก! -->
     <div id="lovePage">
       <div class="love-gif-wrap">
         <img src="https://media.giphy.com/media/MDJ9IbxxvDUQM/giphy.gif" alt="love gif">
@@ -176,8 +177,10 @@
       <p class="love-msg" id="loveMsg">หัวใจมันบอกอยู่แล้วนี่หนา 💕</p>
       <div class="confetti-row">🎉✨💕🎊</div>
     </div>
-
   </div>
+
+  <!-- ปุ่มไม่อยู่นอก card เพื่อ fixed positioning ที่ถูกต้อง -->
+  <button class="btn-no" id="noBtn">ไม่ 😒</button>
 </div>
 
 <script>
@@ -222,6 +225,36 @@
     hint.appendChild(copyBtn);
   }
 
+  const noBtn = document.getElementById('noBtn');
+  const noCounter = document.getElementById('noCounter');
+  let noCount = 0;
+  // ตำแหน่งปัจจุบัน (px จาก top-left ของ viewport)
+  let curX = 0, curY = 0;
+  let noBtnInited = false;
+
+  const msgs = [
+    "หลอกตัวเองอยู่นะ 😏","แน่ใจแล้วหรอ? 🤨","โกหกใครอยู่อ่ะ 😤",
+    "กดไม่ถูกเลย~ 🙈","ยิ่งหนีก็ยิ่งรัก 💓","เลิกพยายามเลย 🫣","รักแน่ๆ เลย! 💘"
+  ];
+
+  function initNoBtn() {
+    if (noBtnInited) return;
+    noBtnInited = true;
+    // วางปุ่มตรงตำแหน่ง placeholder
+    const ph = document.getElementById('noPlaceholder');
+    const rect = ph.getBoundingClientRect();
+    curX = rect.left;
+    curY = rect.top;
+    // ปิด transition ชั่วคราวเพื่อวางตำแหน่งแรกโดยไม่ animate
+    noBtn.style.transition = 'none';
+    noBtn.style.left = curX + 'px';
+    noBtn.style.top  = curY + 'px';
+    noBtn.style.visibility = 'visible';
+    // force reflow แล้วเปิด transition กลับ
+    noBtn.getBoundingClientRect();
+    noBtn.style.transition = '';
+  }
+
   function goToQuestion(n1, n2) {
     document.getElementById('questionText').textContent = n1 + ' รัก ' + n2 + ' นะ แล้ว ' + n2 + ' รัก ' + n1 + ' มั้ย? 💕';
     document.getElementById('loveTitle').textContent = n2 + ' รัก ' + n1 + ' ด้วยยย! 💖';
@@ -229,83 +262,53 @@
 
     document.getElementById('namePage').style.display = 'none';
     document.getElementById('questionPage').style.display = 'flex';
-
     noCount = 0;
-    document.getElementById('noCounter').textContent = '';
+    noCounter.textContent = '';
+
+    // init ปุ่มหลัง layout render
+    requestAnimationFrame(() => requestAnimationFrame(initNoBtn));
   }
 
-  // ── ปุ่มหนี ──
-  let noCount = 0;
-  let hasFloated = false;
-  const noBtn = document.getElementById('noBtn');
-  const noCounter = document.getElementById('noCounter');
-  const msgs = [
-    "หลอกตัวเองอยู่นะ 😏","แน่ใจแล้วหรอ? 🤨","โกหกใครอยู่อ่ะ 😤",
-    "กดไม่ถูกเลย~ 🙈","ยิ่งหนีก็ยิ่งรัก 💓","เลิกพยายามเลย 🫣","รักแน่ๆ เลย! 💘"
-  ];
+  function dodgeNo(e) {
+    if (e) e.preventDefault();
+    initNoBtn();
 
-  function floatNoBtn() {
-    if (hasFloated) return;
-    hasFloated = true;
-    // อ่านตำแหน่งจริงของปุ่มก่อนดึงออกจาก flow
-    const rect = noBtn.getBoundingClientRect();
-    noBtn.style.position = 'fixed';
-    noBtn.style.left = rect.left + 'px';
-    noBtn.style.top  = rect.top  + 'px';
-    noBtn.style.width = rect.width + 'px';
-    noBtn.style.zIndex = '10';
-  }
-
-  function positionNoBtn() {
     const bw = noBtn.offsetWidth  || 120;
     const bh = noBtn.offsetHeight || 50;
-    const pad = 24;
-    const flee = 160;
-
-    // อ่านตำแหน่งปัจจุบันจาก getBoundingClientRect (แม่นกว่า style.left/top)
-    const cur = noBtn.getBoundingClientRect();
-    const currentLeft = cur.left;
-    const currentTop  = cur.top;
+    const pad = 20;
+    const maxX = window.innerWidth  - bw - pad;
+    const maxY = window.innerHeight - bh - pad;
 
     let nx, ny, tries = 0;
     do {
       const angle = Math.random() * 2 * Math.PI;
-      const dist  = 80 + Math.random() * flee;
-      nx = currentLeft + Math.cos(angle) * dist;
-      ny = currentTop  + Math.sin(angle) * dist;
+      const dist  = 100 + Math.random() * 180;
+      nx = curX + Math.cos(angle) * dist;
+      ny = curY + Math.sin(angle) * dist;
       tries++;
-    } while (
-      tries < 30 && (
-        nx < pad || nx + bw > window.innerWidth  - pad ||
-        ny < pad || ny + bh > window.innerHeight - pad
-      )
-    );
+    } while (tries < 30 && (nx < pad || nx > maxX || ny < pad || ny > maxY));
 
-    nx = Math.max(pad, Math.min(nx, window.innerWidth  - bw - pad));
-    ny = Math.max(pad, Math.min(ny, window.innerHeight - bh - pad));
+    nx = Math.max(pad, Math.min(nx, maxX));
+    ny = Math.max(pad, Math.min(ny, maxY));
 
+    curX = nx;
+    curY = ny;
+
+    // ขยับโดยเปลี่ยน left/top โดยตรง (transition อยู่ใน CSS แล้ว)
     noBtn.style.left = nx + 'px';
     noBtn.style.top  = ny + 'px';
+
+    noCount++;
+    noCounter.textContent = msgs[Math.min(noCount - 1, msgs.length - 1)];
   }
 
-  function dodgeNo(e) {
-    if (e && e.preventDefault) e.preventDefault();
-    floatNoBtn();
-    // รอ 1 frame ให้ browser วาง fixed position ก่อน แล้วค่อยขยับ
-    requestAnimationFrame(() => {
-      noCount++;
-      noCounter.textContent = msgs[Math.min(noCount - 1, msgs.length - 1)];
-      positionNoBtn();
-    });
-  }
-
-  noBtn.addEventListener('click', dodgeNo);
+  noBtn.addEventListener('click',      dodgeNo);
   noBtn.addEventListener('touchstart', dodgeNo, { passive: false });
 
   function showLove() {
     document.getElementById('questionPage').style.display = 'none';
     document.getElementById('lovePage').style.display = 'flex';
-    if (hasFloated) noBtn.style.display = 'none';
+    noBtn.style.display = 'none';
     makeBurst();
   }
 
