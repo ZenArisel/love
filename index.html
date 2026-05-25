@@ -100,13 +100,14 @@
   .btn-yes:hover { transform:translateY(-3px) scale(1.04); box-shadow:0 10px 30px rgba(220,60,130,0.45); }
   .btn-yes:active { transform:scale(0.97); }
 
-  /* ปุ่มไม่ — เริ่มอยู่ใน btn-row, พอหนีจะเปลี่ยนเป็น fixed */
   .btn-no {
     padding:13px 32px;
     background:rgba(255,255,255,0.75); color:#c06090;
     border:2px solid rgba(220,100,160,0.35); border-radius:50px;
     font-size:1.05rem; font-family:'Sarabun',sans-serif; font-weight:700;
     cursor:pointer;
+    /* เพิ่ม transition เพื่อให้ขยับลื่น */
+    transition: left 0.15s ease, top 0.15s ease;
   }
   .btn-no.floating {
     position:fixed; z-index:10;
@@ -246,25 +247,26 @@
   function floatNoBtn() {
     if (hasFloated) return;
     hasFloated = true;
+    // อ่านตำแหน่งจริงของปุ่มก่อนดึงออกจาก flow
     const rect = noBtn.getBoundingClientRect();
-    // ดึงออกจาก flow ก่อน แล้วค่อยวางตำแหน่งเดิม
     noBtn.style.position = 'fixed';
     noBtn.style.left = rect.left + 'px';
     noBtn.style.top  = rect.top  + 'px';
     noBtn.style.width = rect.width + 'px';
     noBtn.style.zIndex = '10';
-    // บังคับให้ browser repaint ก่อน จึงค่อยขยับ
-    noBtn.getBoundingClientRect();
   }
 
   function positionNoBtn() {
-    const bw = noBtn.offsetWidth || 120;
+    const bw = noBtn.offsetWidth  || 120;
     const bh = noBtn.offsetHeight || 50;
-    const card = document.querySelector('.card');
-    const cr = card.getBoundingClientRect();
-    const currentLeft = parseFloat(noBtn.style.left) || (window.innerWidth/2);
-    const currentTop  = parseFloat(noBtn.style.top)  || (window.innerHeight/2);
-    const pad = 24, flee = 160;
+    const pad = 24;
+    const flee = 160;
+
+    // อ่านตำแหน่งปัจจุบันจาก getBoundingClientRect (แม่นกว่า style.left/top)
+    const cur = noBtn.getBoundingClientRect();
+    const currentLeft = cur.left;
+    const currentTop  = cur.top;
+
     let nx, ny, tries = 0;
     do {
       const angle = Math.random() * 2 * Math.PI;
@@ -273,27 +275,32 @@
       ny = currentTop  + Math.sin(angle) * dist;
       tries++;
     } while (
-      tries < 20 && (
-        nx < pad || nx + bw > window.innerWidth - pad ||
-        ny < pad || ny + bh > window.innerHeight - pad ||
-        (nx < cr.right + 30 && nx + bw > cr.left - 30 && ny < cr.bottom + 30 && ny + bh > cr.top - 30)
+      tries < 30 && (
+        nx < pad || nx + bw > window.innerWidth  - pad ||
+        ny < pad || ny + bh > window.innerHeight - pad
       )
     );
-    nx = Math.max(pad, Math.min(nx, window.innerWidth - bw - pad));
+
+    nx = Math.max(pad, Math.min(nx, window.innerWidth  - bw - pad));
     ny = Math.max(pad, Math.min(ny, window.innerHeight - bh - pad));
+
     noBtn.style.left = nx + 'px';
     noBtn.style.top  = ny + 'px';
   }
 
-  function dodgeNo() {
+  function dodgeNo(e) {
+    if (e && e.preventDefault) e.preventDefault();
     floatNoBtn();
-    noCount++;
-    noCounter.textContent = msgs[Math.min(noCount - 1, msgs.length - 1)];
-    positionNoBtn();
+    // รอ 1 frame ให้ browser วาง fixed position ก่อน แล้วค่อยขยับ
+    requestAnimationFrame(() => {
+      noCount++;
+      noCounter.textContent = msgs[Math.min(noCount - 1, msgs.length - 1)];
+      positionNoBtn();
+    });
   }
 
   noBtn.addEventListener('click', dodgeNo);
-  noBtn.addEventListener('touchstart', function(e){ e.preventDefault(); dodgeNo(); });
+  noBtn.addEventListener('touchstart', dodgeNo, { passive: false });
 
   function showLove() {
     document.getElementById('questionPage').style.display = 'none';
