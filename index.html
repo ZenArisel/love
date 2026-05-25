@@ -246,22 +246,24 @@
   function floatNoBtn() {
     if (hasFloated) return;
     hasFloated = true;
-    // จับตำแหน่งปัจจุบันของปุ่มก่อน fixed
     const rect = noBtn.getBoundingClientRect();
-    noBtn.classList.add('floating');
+    // ดึงออกจาก flow ก่อน แล้วค่อยวางตำแหน่งเดิม
+    noBtn.style.position = 'fixed';
     noBtn.style.left = rect.left + 'px';
     noBtn.style.top  = rect.top  + 'px';
     noBtn.style.width = rect.width + 'px';
+    noBtn.style.zIndex = '10';
+    // บังคับให้ browser repaint ก่อน จึงค่อยขยับ
+    noBtn.getBoundingClientRect();
   }
 
   function positionNoBtn() {
-    floatNoBtn();
     const bw = noBtn.offsetWidth || 120;
     const bh = noBtn.offsetHeight || 50;
     const card = document.querySelector('.card');
     const cr = card.getBoundingClientRect();
-    const currentLeft = parseFloat(noBtn.style.left);
-    const currentTop  = parseFloat(noBtn.style.top);
+    const currentLeft = parseFloat(noBtn.style.left) || (window.innerWidth/2);
+    const currentTop  = parseFloat(noBtn.style.top)  || (window.innerHeight/2);
     const pad = 24, flee = 160;
     let nx, ny, tries = 0;
     do {
@@ -284,6 +286,7 @@
   }
 
   function dodgeNo() {
+    floatNoBtn();
     noCount++;
     noCounter.textContent = msgs[Math.min(noCount - 1, msgs.length - 1)];
     positionNoBtn();
