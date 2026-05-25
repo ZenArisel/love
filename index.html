@@ -87,7 +87,8 @@
   #questionPage h1 { font-size:clamp(1.3rem,5vw,1.9rem); font-weight:700; color:#d63877; margin-bottom:8px; line-height:1.4; }
   .subtitle { font-size:0.88rem; color:#c06090; margin-bottom:26px; opacity:0.8; }
 
-  .btn-row { display:flex; gap:16px; justify-content:center; }
+  .btn-row { display:flex; gap:16px; justify-content:center; align-items:center; }
+
   .btn-yes {
     padding:13px 32px;
     background:linear-gradient(135deg,#f05a99,#e0348a);
@@ -98,16 +99,17 @@
   }
   .btn-yes:hover { transform:translateY(-3px) scale(1.04); box-shadow:0 10px 30px rgba(220,60,130,0.45); }
   .btn-yes:active { transform:scale(0.97); }
-  .btn-no-placeholder { padding:13px 32px; border-radius:50px; font-size:1.05rem; opacity:0; pointer-events:none; min-width:90px; }
 
+  /* ปุ่มไม่ — เริ่มอยู่ใน btn-row, พอหนีจะเปลี่ยนเป็น fixed */
   .btn-no {
     padding:13px 32px;
     background:rgba(255,255,255,0.75); color:#c06090;
     border:2px solid rgba(220,100,160,0.35); border-radius:50px;
     font-size:1.05rem; font-family:'Sarabun',sans-serif; font-weight:700;
-    cursor:pointer; position:fixed; z-index:10;
-    transition:left 0.18s ease, top 0.18s ease;
-    display:none;
+    cursor:pointer;
+  }
+  .btn-no.floating {
+    position:fixed; z-index:10;
   }
 
   .no-counter { margin-top:14px; font-size:0.82rem; color:#d06090; min-height:18px; opacity:0.75; }
@@ -125,16 +127,6 @@
   .love-msg { font-size:0.95rem; color:#c06090; animation:slideUp 0.5s 0.3s ease both; line-height:1.6; }
   .confetti-row { margin-top:18px; font-size:1.4rem; letter-spacing:8px; animation:slideUp 0.5s 0.45s ease both; }
   @keyframes slideUp { 0%{transform:translateY(20px);opacity:0;} 100%{transform:translateY(0);opacity:1;} }
-
-  .btn-restart {
-    margin-top:22px; padding:10px 26px;
-    background:rgba(255,255,255,0.7); color:#c06090;
-    border:2px solid rgba(220,100,160,0.3); border-radius:50px;
-    font-size:0.88rem; font-family:'Sarabun',sans-serif; font-weight:600;
-    cursor:pointer; animation:slideUp 0.5s 0.6s ease both;
-    transition:background 0.15s;
-  }
-  .btn-restart:hover { background:rgba(255,220,235,0.7); }
 </style>
 </head>
 <body>
@@ -147,16 +139,16 @@
     <div id="namePage">
       <span class="icon">💕</span>
       <h1>ใส่ชื่อทั้งคู่เลย~</h1>
-      <p>แล้วเอาลิงก์ไปส่งให้เค้ากดนะ</p>
+      <p>แล้วเอาลิงก์ไปส่งให้เค้านะ</p>
       <div class="name-input-wrap">
-        <input id="name1Input" type="text" placeholder="ชื่อฉัน (คนส่ง)..." maxlength="30" autocomplete="off" />
+        <input id="name1Input" type="text" placeholder="ชื่อเรา..." maxlength="30" autocomplete="off" />
         <span class="input-icon">🌸</span>
       </div>
       <div class="name-input-wrap">
-        <input id="name2Input" type="text" placeholder="ชื่อเค้า (คนรับ)..." maxlength="30" autocomplete="off" />
+        <input id="name2Input" type="text" placeholder="ชื่อเค้า..." maxlength="30" autocomplete="off" />
         <span class="input-icon">💕</span>
       </div>
-      <button class="btn-start" onclick="startWithName()">สร้างลิงก์ส่งให้เค้า 💌</button>
+      <button class="btn-start" onclick="startWithName()">สร้างลิงก์ 💌</button>
       <div class="share-hint" id="shareHint"></div>
     </div>
 
@@ -166,10 +158,10 @@
         <img src="https://media.giphy.com/media/MpNy5P7x5vWM0/giphy.gif" alt="nervous cat">
       </div>
       <h1 id="questionText">รักเค้ามั้ยยย? 💕</h1>
-      <p class="subtitle">คิดดีๆ นะ ก่อนจะตอบ...</p>
+      <p class="subtitle">คิดให้ดีก่อนนะ~</p>
       <div class="btn-row">
         <button class="btn-yes" onclick="showLove()">รัก ❤️</button>
-        <div class="btn-no-placeholder" aria-hidden="true">ไม่ 😒</div>
+        <button class="btn-no" id="noBtn">ไม่ 😒</button>
       </div>
       <div class="no-counter" id="noCounter"></div>
     </div>
@@ -182,12 +174,9 @@
       <h1 class="love-title" id="loveTitle">รู้อยู่แล้วว่าต้องรัก!</h1>
       <p class="love-msg" id="loveMsg">หัวใจมันบอกอยู่แล้วนี่หนา 💕</p>
       <div class="confetti-row">🎉✨💕🎊</div>
-      <button class="btn-restart" onclick="restart()">ส่งให้คนอื่น 🔄</button>
     </div>
 
   </div>
-
-  <button class="btn-no" id="noBtn" onclick="dodgeNo()">ไม่ 😒</button>
 </div>
 
 <script>
@@ -195,11 +184,8 @@
   let name1 = (params.get('n1') || '').trim();
   let name2 = (params.get('n2') || '').trim();
 
-  if (name1 && name2) {
-    goToQuestion(name1, name2);
-  }
+  if (name1 && name2) goToQuestion(name1, name2);
 
-  // Enter ข้ามช่อง
   document.getElementById('name1Input').addEventListener('keydown', e => {
     if (e.key === 'Enter') document.getElementById('name2Input').focus();
   });
@@ -212,7 +198,6 @@
     const v2 = document.getElementById('name2Input').value.trim();
     const inp1 = document.getElementById('name1Input');
     const inp2 = document.getElementById('name2Input');
-
     if (!v1) { inp1.focus(); inp1.style.borderColor='#f05a99'; setTimeout(()=>inp1.style.borderColor='',800); return; }
     if (!v2) { inp2.focus(); inp2.style.borderColor='#f05a99'; setTimeout(()=>inp2.style.borderColor='',800); return; }
 
@@ -221,9 +206,8 @@
     url.searchParams.set('n2', v2);
     history.replaceState(null, '', url.toString());
 
-    // แสดงลิงก์ + ปุ่มก็อป
     const hint = document.getElementById('shareHint');
-    hint.innerHTML = 'คัดลอกลิงก์นี้ส่งให้ <strong style="color:#d63877">' + v2 + '</strong> เปิดนะ~<br><code id="linkCode">' + url.toString() + '</code>';
+    hint.innerHTML = 'ส่งลิงก์นี้ให้ <strong style="color:#d63877">' + v2 + '</strong> เปิดนะ~<br><code>' + url.toString() + '</code>';
     const copyBtn = document.createElement('button');
     copyBtn.textContent = '📋 คัดลอกลิงก์';
     copyBtn.style.cssText = 'margin-top:8px;padding:7px 18px;background:linear-gradient(135deg,#f05a99,#e0348a);color:white;border:none;border-radius:50px;font-size:0.82rem;font-family:Sarabun,sans-serif;font-weight:700;cursor:pointer;';
@@ -238,38 +222,20 @@
   }
 
   function goToQuestion(n1, n2) {
-    // "(n1)รัก(n2)นะ แล้ว(n2)รักเค้ามั้ย?"
-    document.getElementById('questionText').textContent = n1 + 'รัก' + n2 + 'นะ แล้ว' + n2 + 'รัก' + n1 + 'มั้ย? 💕';
-    document.getElementById('loveTitle').textContent = n2 + 'รัก' + n1 + 'ด้วยยย! 💖';
-    document.getElementById('loveMsg').innerHTML = 'รู้อยู่แล้วว่าใจมันบอก~<br>' + n1 + ' จะดีใจมากเลยนะ 💕';
+    document.getElementById('questionText').textContent = n1 + ' รัก ' + n2 + ' นะ แล้ว ' + n2 + ' รัก ' + n1 + ' มั้ย? 💕';
+    document.getElementById('loveTitle').textContent = n2 + ' รัก ' + n1 + ' ด้วยยย! 💖';
+    document.getElementById('loveMsg').innerHTML = 'รู้อยู่แล้วว่าใจมันบอก 💕<br>' + n1 + ' จะดีใจมากเลยนะ~';
 
     document.getElementById('namePage').style.display = 'none';
     document.getElementById('questionPage').style.display = 'flex';
-    document.getElementById('noBtn').style.display = 'block';
 
     noCount = 0;
     document.getElementById('noCounter').textContent = '';
-    setTimeout(positionNoBtn, 80);
   }
 
-  function restart() {
-    const url = new URL(window.location.href);
-    url.searchParams.delete('n1');
-    url.searchParams.delete('n2');
-    history.replaceState(null, '', url.toString());
-
-    document.getElementById('lovePage').style.display = 'none';
-    document.getElementById('questionPage').style.display = 'none';
-    document.getElementById('noBtn').style.display = 'none';
-    document.getElementById('namePage').style.display = 'flex';
-    document.getElementById('shareHint').innerHTML = '';
-    document.getElementById('name1Input').value = '';
-    document.getElementById('name2Input').value = '';
-    document.getElementById('name1Input').focus();
-  }
-
-  // ปุ่มหนี
+  // ── ปุ่มหนี ──
   let noCount = 0;
+  let hasFloated = false;
   const noBtn = document.getElementById('noBtn');
   const noCounter = document.getElementById('noCounter');
   const msgs = [
@@ -277,13 +243,25 @@
     "กดไม่ถูกเลย~ 🙈","ยิ่งหนีก็ยิ่งรัก 💓","เลิกพยายามเลย 🫣","รักแน่ๆ เลย! 💘"
   ];
 
+  function floatNoBtn() {
+    if (hasFloated) return;
+    hasFloated = true;
+    // จับตำแหน่งปัจจุบันของปุ่มก่อน fixed
+    const rect = noBtn.getBoundingClientRect();
+    noBtn.classList.add('floating');
+    noBtn.style.left = rect.left + 'px';
+    noBtn.style.top  = rect.top  + 'px';
+    noBtn.style.width = rect.width + 'px';
+  }
+
   function positionNoBtn() {
+    floatNoBtn();
     const bw = noBtn.offsetWidth || 120;
     const bh = noBtn.offsetHeight || 50;
     const card = document.querySelector('.card');
     const cr = card.getBoundingClientRect();
-    const currentLeft = parseFloat(noBtn.style.left) || (window.innerWidth/2 - bw/2);
-    const currentTop  = parseFloat(noBtn.style.top)  || (cr.bottom + 20);
+    const currentLeft = parseFloat(noBtn.style.left);
+    const currentTop  = parseFloat(noBtn.style.top);
     const pad = 24, flee = 160;
     let nx, ny, tries = 0;
     do {
@@ -303,7 +281,6 @@
     ny = Math.max(pad, Math.min(ny, window.innerHeight - bh - pad));
     noBtn.style.left = nx + 'px';
     noBtn.style.top  = ny + 'px';
-    noBtn.style.right = 'auto'; noBtn.style.bottom = 'auto';
   }
 
   function dodgeNo() {
@@ -313,13 +290,13 @@
   }
 
   noBtn.addEventListener('mouseover', positionNoBtn);
+  noBtn.addEventListener('click', dodgeNo);
   noBtn.addEventListener('touchstart', function(e){ e.preventDefault(); dodgeNo(); });
-  window.addEventListener('resize', positionNoBtn);
 
   function showLove() {
     document.getElementById('questionPage').style.display = 'none';
     document.getElementById('lovePage').style.display = 'flex';
-    noBtn.style.display = 'none';
+    if (hasFloated) noBtn.style.display = 'none';
     makeBurst();
   }
 
